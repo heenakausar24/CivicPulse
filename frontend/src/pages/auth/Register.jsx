@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const GREEN = "#00b050";
 const GREEN_DARK = "#009940";
 const GREEN_FOCUS_SHADOW = "rgba(0,176,80,0.12)";
@@ -8,6 +9,8 @@ const GREEN_FOCUS_SHADOW = "rgba(0,176,80,0.12)";
 const styles = {
   page: {
     display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
     minHeight: "100vh",
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
     backgroundColor: "#ffffff",
@@ -15,7 +18,8 @@ const styles = {
 
   // LEFT PANEL — image side
   left: {
-    flex: "0 0 48%",
+    flex: "1 1 48%",
+    minWidth: "320px",
     position: "relative",
     overflow: "hidden",
     backgroundColor: "#f0f4f1",
@@ -29,12 +33,13 @@ const styles = {
 
   // RIGHT PANEL — form side
   right: {
-    flex: "0 0 52%",
+    flex: "1 1 52%",
+    minWidth: "320px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "flex-end",
-    padding: "80px 96px",
+    padding: "80px 40px",
     backgroundColor: "#ffffff",
   },
 
@@ -43,7 +48,7 @@ const styles = {
     maxWidth: "750px",
     backgroundColor: "#f9fafb",
     borderRadius: "20px",
-    padding: "52px 48px",
+    padding: "42px 32px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.05)",
   },
 
@@ -63,11 +68,13 @@ const styles = {
   // Two-column row for Name + Phone
   fieldRow: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "20px",
     marginBottom: "24px",
   },
   fieldHalf: {
-    flex: 1,
+    flex: "1 1 300px",
+    minWidth: "0",
   },
 
   fieldGroup: {
@@ -211,10 +218,31 @@ export default function Register() {
 
   const strength = getStrength(form.password);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!agreed) return alert("Please accept the Terms & Privacy Policy to continue.");
-    alert(`Account created for ${form.name} (${form.email})`);
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return alert(result?.message || "Sign up failed. Please try again.");
+      }
+
+      const token = result?.data?.accessToken;
+      if (token) localStorage.setItem("accessToken", token);
+
+      alert(`Account created for ${form.name}. Redirecting to Home.`);
+      navigate("/home");
+    } catch (error) {
+      console.error(error);
+      alert("Unable to complete signup. Check your network and try again.");
+    }
   };
 
   const inputStyle = (field) => ({

@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const styles = {
   page: {
     display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
     minHeight: "100vh",
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
     backgroundColor: "#ffffff",
@@ -11,12 +13,13 @@ const styles = {
 
   // LEFT PANEL — form side
   left: {
-    flex: "0 0 52%",
+    flex: "1 1 52%",
+    minWidth: "320px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "flex-start",
-    padding: "80px 96px",
+    padding: "80px 40px",
     backgroundColor: "#ffffff",
   },
 
@@ -47,7 +50,7 @@ const styles = {
     maxWidth: "750px",
     backgroundColor: "#f9fafb",
     borderRadius: "20px",
-    padding: "52px 48px",
+    padding: "42px 32px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.05)",
   },
 
@@ -155,7 +158,8 @@ const styles = {
 
   // RIGHT PANEL — image only
   right: {
-    flex: "0 0 48%",
+    flex: "1 1 48%",
+    minWidth: "320px",
     position: "relative",
     overflow: "hidden",
     backgroundColor: "#f0f4f1",
@@ -180,17 +184,51 @@ function GoogleIcon() {
   );
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const hideSignup = location?.state?.hideSignup;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Logging in as ${email}`);
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = result?.message || "Login failed. Please try again.";
+        return alert(errorMessage);
+      }
+
+      const userRole = result?.data?.user?.role;
+      const token = result?.data?.accessToken;
+
+      if (token) {
+        localStorage.setItem("accessToken", token);
+      }
+
+      if (userRole === "AUTHORITY") {
+        navigate("/dashboard");
+      } else {
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Unable to login. Please check your network and try again.");
+    }
   };
 
   const inputStyle = (field) => ({
@@ -314,15 +352,17 @@ export default function Login() {
             </button> */}
           </form>
 
-         <p style={styles.signupText}>
-  Don't have an account?{" "}
-  <span
-    style={{ ...styles.signupLink, cursor: "pointer" }}
-    onClick={() => navigate("/register")}
-  >
-    Sign up free
-  </span>
-</p>
+         {hideSignup !== true && (
+           <p style={styles.signupText}>
+             Don't have an account?{" "}
+             <span
+               style={{ ...styles.signupLink, cursor: "pointer" }}
+               onClick={() => navigate("/register")}
+             >
+               Sign up free
+             </span>
+           </p>
+         )}
         </div>
       </div>
 

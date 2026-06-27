@@ -6,7 +6,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navbar */}
-      <header className="flex items-center justify-between px-12 py-6 border-b border-gray-100 bg-white">
+      <header className="flex flex-col sm:flex-row items-center justify-between px-6 sm:px-12 py-6 border-b border-gray-100 bg-white gap-4 sm:gap-0">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,14 +23,14 @@ const LandingPage = () => {
       <main className="flex flex-1 flex-col md:flex-row">
 
         {/* LEFT — Citizen */}
-        <div className="flex-1 flex flex-col items-center justify-center px-20 py-28 bg-white border-b md:border-b-0 md:border-r border-gray-100">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 md:px-20 py-20 md:py-28 bg-white border-b md:border-b-0 md:border-r border-gray-100">
           {/* Badge */}
           <span className="mb-8 inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-5 py-2 text-sm font-medium text-blue-700 tracking-wide uppercase">
             <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
             Citizen
           </span>
 
-          <h2 className="text-5xl font-semibold text-gray-900 text-center leading-tight mb-4">
+          <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 text-center leading-tight mb-4">
             For <span className="italic font-serif">Citizens</span>
           </h2>
 
@@ -60,14 +60,14 @@ const LandingPage = () => {
         </div>
 
         {/* RIGHT — Authority */}
-        <div className="flex-1 flex flex-col items-center justify-center px-20 py-28 bg-gray-50">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 md:px-20 py-20 md:py-28 bg-gray-50">
           {/* Badge */}
           <span className="mb-8 inline-flex items-center gap-2 rounded-full bg-gray-200 border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 tracking-wide uppercase">
             <span className="w-2 h-2 rounded-full bg-gray-500 inline-block" />
             Authority
           </span>
 
-          <h2 className="text-5xl font-semibold text-gray-900 text-center leading-tight mb-4">
+          <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 text-center leading-tight mb-4">
             For <span className="italic font-serif">Authorities</span>
           </h2>
 
@@ -78,7 +78,7 @@ const LandingPage = () => {
           {/* CTA — sign in only */}
           <div className="flex flex-col items-center gap-4 w-full max-w-xs">
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/login", { state: { hideSignup: true } })}
               className="w-full rounded-xl bg-gray-900 text-white text-base font-medium py-4 hover:bg-gray-800 active:bg-black transition-colors"
             >
               Sign in
