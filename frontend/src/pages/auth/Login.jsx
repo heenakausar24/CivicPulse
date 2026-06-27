@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const styles = {
   page: {
@@ -43,7 +44,7 @@ const styles = {
 
   formCard: {
     width: "100%",
-    maxWidth: "650px",
+    maxWidth: "750px",
     backgroundColor: "#f9fafb",
     borderRadius: "20px",
     padding: "52px 48px",
@@ -88,7 +89,7 @@ const styles = {
   input: {
     width: "100%",
     padding: "14px 16px 14px 46px",
-    fontSize: "15px",
+    fontSize: "18px",
     color: "#111827",
     backgroundColor: "#ffffff",
     border: "1.5px solid #e5e7eb",
@@ -129,7 +130,7 @@ const styles = {
   btn: {
     width: "100%",
     padding: "15px",
-    fontSize: "16px",
+    fontSize: "20px",
     fontWeight: "600",
     color: "#ffffff",
     backgroundColor: "#00b050",
@@ -140,40 +141,9 @@ const styles = {
     transition: "background-color 0.15s",
   },
 
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    margin: "24px 0",
-    color: "#9ca3af",
-    fontSize: "14px",
-  },
-  dividerLine: {
-    flex: 1,
-    height: "1px",
-    backgroundColor: "#e5e7eb",
-  },
-
-  googleBtn: {
-    width: "100%",
-    padding: "14px",
-    fontSize: "15px",
-    fontWeight: "500",
-    color: "#374151",
-    backgroundColor: "#ffffff",
-    border: "1.5px solid #e5e7eb",
-    borderRadius: "10px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "12px",
-    transition: "border-color 0.15s, background-color 0.15s",
-  },
-
   signupText: {
     marginTop: "28px",
-    fontSize: "14px",
+    fontSize: "20px",
     color: "#6b7280",
     textAlign: "center",
   },
@@ -211,6 +181,7 @@ function GoogleIcon() {
 }
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -285,7 +256,7 @@ export default function Login() {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    fontSize: "18px",
+                    fontSize: "25px",
                     color: "#9ca3af",
                     padding: "0",
                     lineHeight: 1,
@@ -343,10 +314,15 @@ export default function Login() {
             </button> */}
           </form>
 
-          <p style={styles.signupText}>
-            Don't have an account?{" "}
-            <a href="#" style={styles.signupLink}>Sign up free</a>
-          </p>
+         <p style={styles.signupText}>
+  Don't have an account?{" "}
+  <span
+    style={{ ...styles.signupLink, cursor: "pointer" }}
+    onClick={() => navigate("/register")}
+  >
+    Sign up free
+  </span>
+</p>
         </div>
       </div>
 
