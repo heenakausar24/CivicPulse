@@ -14,7 +14,7 @@ const LandingPage = () => {
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
-          <span className="text-2xl font-semibold text-gray-900 tracking-tight">CivicPulse</span>
+          <span className="text-2xl font-semibold text-gray-900 tracking-tight">Public Grievance</span>
         </div>
         <span className="text-base text-gray-400">AI-powered Grievance Management</span>
       </header>

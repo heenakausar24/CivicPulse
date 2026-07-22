@@ -1,7 +1,7 @@
 {
-  "name": "civicpulse-backend",
+  "name": "grievance-backend",
   "version": "1.0.0",
-  "description": "Backend API for CivicPulse Smart Grievance Management System",
+  "description": "Backend API for Smart Grievance Management System",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -31,7 +31,7 @@
   "keywords": [
     "express",
     "prisma",
-    "civicpulse",
+    "grievance-management",
     "postgres",
     "socket.io"
   ],

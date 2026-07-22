@@ -264,11 +264,21 @@ export default function Register() {
 
       {/* ── RIGHT: FORM ── */}
       <div style={styles.right}>
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
+            Public Research Platform
+          </div>
+          <div style={{ marginTop: '8px', color: '#6b7280' }}>
+            Register to start managing your literature and experiments.
+          </div>
+        </div>
         <div style={styles.formCard}>
           <h1 style={styles.heading}>Create account</h1>
-          <p style={styles.subheading}>Join CivicPulse — it's free to get started.</p>
+          <p style={styles.subheading}>Create an account — it's free to get started.</p>
 
           <form onSubmit={handleSubmit} autoComplete="off">
+            <input type="text" name="username" autoComplete="username" value="" style={{ display: 'none' }} readOnly />
+            <input type="password" name="password" autoComplete="new-password" value="" style={{ display: 'none' }} readOnly />
 
             {/* Name + Phone — side by side */}
             <div style={styles.fieldRow}>
@@ -279,7 +289,9 @@ export default function Register() {
                   <span style={styles.icon}>👤</span>
                   <input
                     id="name"
+                    name="name"
                     type="text"
+                    autoComplete="name"
                     placeholder="Jane Smith"
                     value={form.name}
                     onChange={set("name")}
@@ -298,7 +310,9 @@ export default function Register() {
                   <span style={styles.icon}>📞</span>
                   <input
                     id="phone"
+                    name="phone"
                     type="tel"
+                    autoComplete="tel"
                     placeholder="+91 xxxxx xxxxx"
                     value={form.phone}
                     onChange={set("phone")}
@@ -317,7 +331,9 @@ export default function Register() {
                 <span style={styles.icon}>✉</span>
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
                   value={form.email}
                   onChange={set("email")}
@@ -336,7 +352,9 @@ export default function Register() {
                 <span style={styles.icon}>🔒</span>
                 <input
                   id="password"
+                  name="password"
                   type={showPass ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Create a strong password"
                   value={form.password}
                   onChange={set("password")}

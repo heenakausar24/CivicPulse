@@ -1,4 +1,4 @@
-# CivicPulse - AI Project Context
+# Project - AI Project Context
 
 > Version: 1.0
 > Last Updated: June 2026
@@ -9,7 +9,7 @@
 
 ## Project Name
 
-CivicPulse
+Public Grievance Management
 
 ## Tagline
 
@@ -19,7 +19,7 @@ AI-powered Smart Public Grievance Management Platform.
 
 # Vision
 
-CivicPulse is a modern, AI-powered Public Grievance Management System that enables citizens to report civic issues while helping authorities manage, prioritize and resolve complaints efficiently.
+This project is a modern, AI-powered Public Grievance Management System that enables citizens to report civic issues while helping authorities manage, prioritize and resolve complaints efficiently.
 
 The objective is to build a production-quality full-stack web application that demonstrates software engineering best practices rather than just completing a college project.
 

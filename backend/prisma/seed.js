@@ -13,10 +13,10 @@ async function main() {
 
   // Seed Admin Authority
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@civicpulse.gov' },
+    where: { email: 'admin@example.com' },
     update: {},
     create: {
-      email: 'admin@civicpulse.gov',
+      email: 'admin@example.com',
       name: 'Admin Authority',
       password: adminPasswordHash,
       phone: '1234567890',
@@ -27,10 +27,10 @@ async function main() {
 
   // Seed Officer Authority
   const officer = await prisma.user.upsert({
-    where: { email: 'officer@civicpulse.gov' },
+    where: { email: 'officer@example.com' },
     update: {},
     create: {
-      email: 'officer@civicpulse.gov',
+      email: 'officer@example.com',
       name: 'Officer Authority',
       password: officerPasswordHash,
       phone: '0987654321',

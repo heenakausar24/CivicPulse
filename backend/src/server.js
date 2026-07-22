@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -37,6 +38,9 @@ app.set('io', io);
 
 // Initialize Socket event handling
 initSocket(io);
+
+// Serve uploaded literature and media files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Mount main routing
 app.use('/api', apiRouter);

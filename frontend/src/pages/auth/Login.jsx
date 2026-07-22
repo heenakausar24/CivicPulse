@@ -241,15 +241,23 @@ export default function Login() {
     <div style={styles.page}>
       {/* ── LEFT: FORM ── */}
       <div style={styles.left}>
-        {/* Logo */}
-        
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
+            Public Research Platform
+          </div>
+          <div style={{ marginTop: '8px', color: '#6b7280' }}>
+            Login to access your projects and literature workspace.
+          </div>
+        </div>
 
         {/* Form card */}
         <div style={styles.formCard}>
           <h1 style={styles.heading}>Welcome back</h1>
-          <p style={styles.subheading}>Sign in to CivicPulse </p>
+          <p style={styles.subheading}>Sign in to your account</p>
 
           <form onSubmit={handleSubmit} autoComplete="off">
+            <input type="text" name="username" autoComplete="username" value="" style={{ display: 'none' }} readOnly />
+            <input type="password" name="password" autoComplete="current-password" value="" style={{ display: 'none' }} readOnly />
             {/* Email */}
             <div style={styles.fieldGroup}>
               <label style={styles.label} htmlFor="email">Email</label>
@@ -257,7 +265,9 @@ export default function Login() {
                 <span style={styles.icon}>✉</span>
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="username"
                   placeholder="Your work email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -276,7 +286,9 @@ export default function Login() {
                 <span style={styles.icon}>🔒</span>
                 <input
                   id="password"
+                  name="password"
                   type={showPass ? "text" : "password"}
+                  autoComplete="current-password"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

@@ -21,9 +21,11 @@ model User {
   role          Role           @default(CITIZEN)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  
+
   // Relations
   refreshTokens RefreshToken[]
+  projects      Project[]
+  references    Reference[]
 }
 
 model RefreshToken {
@@ -34,4 +36,103 @@ model RefreshToken {
   expiresAt DateTime
   isRevoked Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  goal        String?
+  status      ProjectStatus @default(DRAFT)
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  references  Reference[]
+  workflow    WorkflowCard[]
+  conceptNodes ConceptNode[]
+  edges       Edge[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum WorkflowStage {
+  LITERATURE_REVIEW
+  HYPOTHESIS_DEVELOPMENT
+  EXPERIMENT_DESIGN
+  RESULT_ANALYSIS
+}
+
+model WorkflowCard {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  stage       WorkflowStage @default(LITERATURE_REVIEW)
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum ConceptNodeType {
+  CONCEPT
+  HYPOTHESIS
+  PAPER
+  EXPERIMENT
+  INSIGHT
+}
+
+enum EdgeRelation {
+  SUPPORTS
+  CONTRADICTS
+  DERIVED_FROM
+  LEADS_TO
+}
+
+model ConceptNode {
+  id          String          @id @default(uuid())
+  label       String
+  type        ConceptNodeType @default(CONCEPT)
+  description String?
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceEdges Edge[]          @relation("sourceEdges")
+  targetEdges Edge[]          @relation("targetEdges")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Edge {
+  id        String       @id @default(uuid())
+  sourceId  String
+  targetId  String
+  relation  EdgeRelation @default(SUPPORTS)
+  projectId String
+  source    ConceptNode  @relation("sourceEdges", fields: [sourceId], references: [id], onDelete: Cascade)
+  target    ConceptNode  @relation("targetEdges", fields: [targetId], references: [id], onDelete: Cascade)
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Reference {
+  id            String    @id @default(uuid())
+  title         String
+  authors       String?
+  year          Int?
+  tags          String[]  @default([])
+  summary       String?
+  filePath      String?
+  fileName      String?
+  fileMimeType  String?
+  projectId     String
+  uploadedById  String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy    User      @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
