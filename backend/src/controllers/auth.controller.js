@@ -2,12 +2,12 @@ import * as authService from '../services/auth.service.js';
 import { sendSuccess } from '../utils/response.js';
 
 /**
- * Handle citizen registration request.
+ * Handle user registration request.
  */
 export const register = async (req, res, next) => {
   try {
-    const result = await authService.registerCitizen(req.body);
-    return sendSuccess(res, 'Citizen registered successfully.', result, 201);
+    const result = await authService.register(req.body);
+    return sendSuccess(res, 'User registered successfully.', result, 201);
   } catch (error) {
     next(error);
   }

@@ -1,18 +1,28 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useOutletContext, useParams } from 'react-router-dom';
 import { getLiterature, uploadLiterature } from '../../services/literature.service.js';
 
-const LiteraturePage = () => {
+export default function LiteraturePage() {
   const { projectId } = useParams();
+  const { myRole } = useOutletContext();
+
   const [references, setReferences] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+
+  // Form states
   const [title, setTitle] = useState('');
   const [authors, setAuthors] = useState('');
   const [year, setYear] = useState('');
   const [tags, setTags] = useState('');
   const [summary, setSummary] = useState('');
   const [file, setFile] = useState(null);
+  
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  
+  // AI Simulation states
+  const [extracting, setExtracting] = useState(false);
 
   const loadReferences = async () => {
     try {
@@ -26,6 +36,52 @@ const LiteraturePage = () => {
   useEffect(() => {
     if (projectId) loadReferences();
   }, [projectId]);
+
+  // Handle Mock AI Metadata Extraction when file is selected
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    if (!selectedFile) return;
+
+    // Trigger AI extraction simulation
+    setExtracting(true);
+    setError(null);
+
+    setTimeout(() => {
+      // Parse file name to guess details
+      const rawName = selectedFile.name;
+      const cleanName = rawName
+        .substring(0, rawName.lastIndexOf('.'))
+        .replace(/[-_]/g, ' ')
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+
+      // Fill in mock details based on file name
+      setTitle(cleanName);
+      
+      const authorsList = ['Dr. Sarah Carter, et al.', 'A. Jenkins & K. Cole', 'Prof. Marcus Vance', 'C. Zhang, et al.'];
+      setAuthors(authorsList[Math.floor(Math.random() * authorsList.length)]);
+      
+      setYear(String(2020 + Math.floor(Math.random() * 6))); // 2020 to 2025
+      
+      const tagsList = [];
+      if (rawName.toLowerCase().includes('data') || rawName.toLowerCase().includes('csv')) {
+        tagsList.push('dataset', 'quantitative-analysis');
+      } else if (rawName.toLowerCase().includes('pdf')) {
+        tagsList.push('literature-review', 'primary-source');
+      } else {
+        tagsList.push('research-paper', 'workspace-ref');
+      }
+      setTags(tagsList.join(', '));
+
+      setSummary(
+        `[AI-Generated Summary]: This document (${selectedFile.name}) was analyzed. It discusses methodology relating to "${cleanName}", outlining key objectives, theoretical boundaries, and experimental frameworks aligned with the project scope.`
+      );
+
+      setExtracting(false);
+    }, 1500);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -48,6 +104,11 @@ const LiteraturePage = () => {
       setTags('');
       setSummary('');
       setFile(null);
+      
+      // Reset file input element visually
+      const fileInput = document.getElementById('file-field');
+      if (fileInput) fileInput.value = '';
+
       loadReferences();
     } catch (err) {
       setError(err.message);
@@ -56,129 +117,241 @@ const LiteraturePage = () => {
     }
   };
 
-  return (
-    <div className="space-y-8">
-      <section className="rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Upload Reference</h2>
-            <p className="text-sm text-slate-500">Project ID: {projectId}</p>
-          </div>
-          <Link to="/projects" className="text-sm text-slate-900 underline hover:text-slate-700">
-            Back to projects
-          </Link>
-        </div>
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
-            <input
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Reference title"
-              required
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Authors</label>
-              <input
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                value={authors}
-                onChange={(event) => setAuthors(event.target.value)}
-                placeholder="Jane Doe, John Smith"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Year</label>
-              <input
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                value={year}
-                onChange={(event) => setYear(event.target.value)}
-                placeholder="2024"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tags</label>
-            <input
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
-              placeholder="machine learning, literature review"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Summary</label>
-            <textarea
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-              rows={4}
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              placeholder="Add a short summary or notes"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">File</label>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,.csv,.png,.jpg,.jpeg"
-              onChange={(event) => setFile(event.target.files?.[0] || null)}
-              className="block w-full text-slate-700"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-white font-semibold hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {saving ? 'Uploading...' : 'Upload Reference'}
-          </button>
-        </form>
-      </section>
+  // Extract unique tags across all references for filtering
+  const allTags = Array.from(new Set(references.flatMap((ref) => ref.tags || [])));
 
-      <section className="rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Literature References</h2>
-        {references.length === 0 ? (
-          <p className="text-slate-600">No references uploaded yet.</p>
-        ) : (
-          <div className="grid gap-4">
-            {references.map((ref) => (
-              <div key={ref.id} className="rounded-3xl border border-slate-200 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">{ref.title}</h3>
-                    <p className="mt-2 text-sm text-slate-500">{ref.authors || 'Unknown authors'} · {ref.year || 'Year not provided'}</p>
-                    <div className="mt-3 text-sm text-slate-600">{ref.summary || 'No summary available.'}</div>
+  // Filter list by text search and selected tag
+  const filteredReferences = references.filter((ref) => {
+    const matchesSearch =
+      ref.title.toLowerCase().includes(search.toLowerCase()) ||
+      (ref.authors && ref.authors.toLowerCase().includes(search.toLowerCase())) ||
+      (ref.summary && ref.summary.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesTag = selectedTag ? ref.tags?.includes(selectedTag) : true;
+
+    return matchesSearch && matchesTag;
+  });
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
+      {/* References List & Search */}
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-white">Literature References</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Browse research documents and metadata.</p>
+            </div>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search literature..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none w-full sm:w-64"
+            />
+          </div>
+
+          {/* Tags Filtering Pills */}
+          {allTags.length > 0 && (
+            <div className="mb-6 flex flex-wrap gap-2.5 items-center">
+              <span className="text-xs text-slate-500 font-medium">Filter tag:</span>
+              <button
+                onClick={() => setSelectedTag('')}
+                className={`rounded-full px-3 py-1 text-2xs font-bold uppercase tracking-wider transition-colors ${
+                  !selectedTag
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-850'
+                }`}
+              >
+                All
+              </button>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(tag === selectedTag ? '' : tag)}
+                  className={`rounded-full px-3 py-1 text-2xs font-bold uppercase tracking-wider transition-colors ${
+                    tag === selectedTag
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-850'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-900/40 bg-red-950/20 p-3 text-xs text-red-400">
+              {error}
+            </div>
+          )}
+
+          {filteredReferences.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-8">
+              No references found matching filters.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {filteredReferences.map((ref) => (
+                <div
+                  key={ref.id}
+                  className="rounded-xl border border-slate-900/60 bg-slate-950/40 p-5 hover:border-slate-850 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-100">{ref.title}</h3>
+                      <p className="mt-1 text-xs font-medium text-slate-400">
+                        {ref.authors || 'Unknown Authors'} · {ref.year || 'Year Not Provided'}
+                      </p>
+                      <p className="mt-3.5 text-xs text-slate-450 leading-relaxed bg-slate-950/50 p-3 rounded-lg border border-slate-900/60">
+                        {ref.summary || 'No summary available.'}
+                      </p>
+                    </div>
+                    {ref.filePath && (
+                      <a
+                        href={`http://localhost:5000/uploads/${ref.filePath.split(/[\\/]/).pop()}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-shrink-0 rounded-lg border border-slate-800 bg-slate-900/20 px-3 py-1.5 text-2xs font-bold uppercase text-indigo-400 hover:text-white hover:border-slate-700 transition-colors"
+                      >
+                        Open
+                      </a>
+                    )}
                   </div>
-                  {ref.filePath && (
-                    <a
-                      href={`/uploads/${ref.filePath}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-slate-900 underline"
-                    >
-                      Download
-                    </a>
+                  {ref.tags?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {ref.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="rounded px-2 py-0.5 text-3xs font-extrabold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-850"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
-                {ref.tags?.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {ref.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                        {tag}
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Upload Reference Panel (Owners/Editors only) */}
+      <div className="space-y-6">
+        {myRole !== 'VIEWER' ? (
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
+            <h2 className="text-lg font-bold text-white mb-4">Add Reference</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Upload Document
+                </label>
+                <div className="relative">
+                  <input
+                    id="file-field"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,.csv,.png,.jpg,.jpeg"
+                    onChange={handleFileChange}
+                    className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-2xs file:font-semibold file:bg-slate-900 file:text-indigo-400 file:hover:bg-slate-850 cursor-pointer"
+                  />
+                  {extracting && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-slate-900/90 px-3 py-1 rounded-lg">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                      <span className="text-[10px] text-indigo-450 font-semibold uppercase tracking-wider">
+                        AI Extracting...
                       </span>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Reference Title
+                </label>
+                <input
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Attention Is All You Need"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid gap-3 grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Authors
+                  </label>
+                  <input
+                    value={authors}
+                    onChange={(e) => setAuthors(e.target.value)}
+                    placeholder="Vaswani, et al."
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Year
+                  </label>
+                  <input
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    placeholder="2017"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="deep-learning, transformers"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Summary / Notes
+                </label>
+                <textarea
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  rows={4}
+                  placeholder="Summary or custom annotations..."
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving || extracting}
+                className="w-full rounded-xl bg-indigo-600 py-3 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Uploading...' : 'Save Reference'}
+              </button>
+            </form>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 text-center">
+            <span className="text-2xl block mb-2">🔒</span>
+            <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
+              Read-Only View
+            </p>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              Your role is <strong>Viewer</strong>. You do not have permissions to upload references or modify project literature.
+            </p>
+          </section>
         )}
-      </section>
+      </div>
     </div>
   );
-};
-
-export default LiteraturePage;
+}

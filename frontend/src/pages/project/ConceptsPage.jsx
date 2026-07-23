@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import * as conceptService from '../../services/concept.service.js';
 
 const types = ['CONCEPT', 'HYPOTHESIS', 'PAPER', 'EXPERIMENT', 'INSIGHT'];
@@ -10,9 +10,11 @@ const relationLabels = {
   LEADS_TO: 'Leads to',
 };
 
-const ConceptsPage = () => {
+export default function ConceptsPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { myRole } = useOutletContext();
+
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [newNode, setNewNode] = useState({ label: '', type: 'CONCEPT', description: '' });
@@ -42,13 +44,13 @@ const ConceptsPage = () => {
       return;
     }
     loadGraph();
-  }, [projectId, token, navigate]);
+  }, [projectId, token]);
 
   const nodePositions = useMemo(() => {
-    const columns = 3;
+    const columns = 2;
     return nodes.reduce((acc, node, index) => {
-      const x = (index % columns) * 260 + 80;
-      const y = Math.floor(index / columns) * 140 + 80;
+      const x = (index % columns) * 260 + 150;
+      const y = Math.floor(index / columns) * 160 + 90;
       acc[node.id] = { x, y };
       return acc;
     }, {});
@@ -56,6 +58,7 @@ const ConceptsPage = () => {
 
   const handleCreateNode = async (event) => {
     event.preventDefault();
+    if (myRole === 'VIEWER') return;
     if (!newNode.label.trim()) {
       setError('Node label is required.');
       return;
@@ -75,8 +78,13 @@ const ConceptsPage = () => {
 
   const handleCreateEdge = async (event) => {
     event.preventDefault();
+    if (myRole === 'VIEWER') return;
     if (!newEdge.sourceId || !newEdge.targetId) {
       setError('Source and target nodes are required.');
+      return;
+    }
+    if (newEdge.sourceId === newEdge.targetId) {
+      setError('Cannot link a node to itself.');
       return;
     }
     try {
@@ -93,6 +101,8 @@ const ConceptsPage = () => {
   };
 
   const handleDeleteNode = async (nodeId) => {
+    if (myRole === 'VIEWER') return;
+    if (!window.confirm('Delete this concept node? This will also remove any connected edges.')) return;
     try {
       await conceptService.deleteConceptNode(projectId, nodeId);
       await loadGraph();
@@ -103,6 +113,8 @@ const ConceptsPage = () => {
   };
 
   const handleDeleteEdge = async (edgeId) => {
+    if (myRole === 'VIEWER') return;
+    if (!window.confirm('Remove this relationship?')) return;
     try {
       await conceptService.deleteEdge(projectId, edgeId);
       await loadGraph();
@@ -113,29 +125,28 @@ const ConceptsPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-semibold">Concept Graph</h1>
-          <p className="text-sm text-slate-500">Visualize concepts, hypotheses, experiments, and insights for this project.</p>
+    <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-4 text-sm text-red-400">
+          {error}
         </div>
-        <button
-          type="button"
-          className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-          onClick={() => navigate('/projects')}
-        >
-          Back to Projects
-        </button>
-      </div>
+      )}
 
-      {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <div>
-          <div className="mb-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Graph view</h2>
-            <div className="relative h-130 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 840 520" preserveAspectRatio="none">
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
+        {/* Left Side: Graph Canvas & List */}
+        <div className="space-y-6">
+          {/* SVG Canvas Workspace */}
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 shadow-lg">
+            <h2 className="text-lg font-bold text-white mb-4">Graph view</h2>
+            <div className="relative h-[560px] overflow-auto rounded-xl border border-slate-900/80 bg-slate-950/60 p-4">
+              
+              {/* SVG drawing layer for relationship lines */}
+              <svg className="absolute inset-0 h-full w-full pointer-events-none" style={{ minHeight: '520px', minWidth: '700px' }}>
+                <defs>
+                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="10" refY="4" orient="auto-start-reverse">
+                    <path d="M0,0 L8,4 L0,8" fill="#4f46e5" />
+                  </marker>
+                </defs>
                 {edges.map((edge) => {
                   const source = nodePositions[edge.sourceId];
                   const target = nodePositions[edge.targetId];
@@ -147,182 +158,259 @@ const ConceptsPage = () => {
                         y1={source.y}
                         x2={target.x}
                         y2={target.y}
-                        stroke="#94a3b8"
+                        stroke="#312e81"
                         strokeWidth="2"
                         markerEnd="url(#arrow)"
                       />
-                      <text x={(source.x + target.x) / 2} y={(source.y + target.y) / 2 - 10} fill="#334155" fontSize="10" textAnchor="middle">
+                      <rect
+                        x={(source.x + target.x) / 2 - 40}
+                        y={(source.y + target.y) / 2 - 10}
+                        width="80"
+                        height="20"
+                        rx="4"
+                        fill="#0b0f19"
+                        stroke="#1e1b4b"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={(source.x + target.x) / 2}
+                        y={(source.y + target.y) / 2 + 3}
+                        fill="#818cf8"
+                        fontSize="9"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                      >
                         {relationLabels[edge.relation] || edge.relation}
                       </text>
                     </g>
                   );
                 })}
-                <defs>
-                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto-start-reverse">
-                    <path d="M0,0 L8,4 L0,8" fill="#475569" />
-                  </marker>
-                </defs>
               </svg>
 
-              {nodes.map((node, index) => {
-                const position = nodePositions[node.id] || { x: 80, y: 80 };
+              {/* Absolute Positioned nodes */}
+              {nodes.map((node) => {
+                const position = nodePositions[node.id] || { x: 100, y: 100 };
                 return (
                   <div
                     key={node.id}
-                    className="absolute w-56 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
-                    style={{ left: position.x - 100, top: position.y - 40 }}
+                    className="absolute w-56 rounded-2xl border border-slate-900 bg-slate-900 p-4 shadow-xl hover:border-slate-800 transition-colors"
+                    style={{ left: position.x - 112, top: position.y - 50 }}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-                        {node.type.toLowerCase()}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteNode(node.id)}
-                        className="text-xs font-semibold text-red-600 hover:text-red-800"
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                          node.type === 'HYPOTHESIS'
+                            ? 'bg-amber-950 text-amber-400 border border-amber-900/30'
+                            : node.type === 'PAPER'
+                            ? 'bg-indigo-950 text-indigo-400 border border-indigo-900/30'
+                            : node.type === 'EXPERIMENT'
+                            ? 'bg-violet-950 text-violet-400 border border-violet-900/30'
+                            : node.type === 'INSIGHT'
+                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/30'
+                            : 'bg-slate-900 text-slate-400 border border-slate-800'
+                        }`}
                       >
-                        delete
-                      </button>
+                        {node.type}
+                      </span>
+                      {myRole !== 'VIEWER' && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNode(node.id)}
+                          className="text-slate-650 hover:text-red-400 text-xs focus:outline-none"
+                          title="Delete Node"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-900">{node.label}</h3>
-                    <p className="mt-2 text-sm text-slate-600">{node.description || 'No description added.'}</p>
+                    <h3 className="text-xs font-bold text-slate-100 line-clamp-1">{node.label}</h3>
+                    <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {node.description || 'No description.'}
+                    </p>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Edges</h2>
+          {/* List of Relationships */}
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 shadow-lg">
+            <h2 className="text-lg font-bold text-white mb-4">Relationships</h2>
             {edges.length === 0 ? (
-              <p className="text-sm text-slate-600">No relationships created yet.</p>
+              <p className="text-xs text-slate-550 italic">No relationships created yet.</p>
             ) : (
-              <div className="space-y-3">
-                {edges.map((edge) => (
-                  <div key={edge.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-slate-700">
-                          <span className="font-semibold">{nodes.find((n) => n.id === edge.sourceId)?.label || 'Unknown'}</span>
-                          {' '}→{' '}
-                          <span className="font-semibold">{nodes.find((n) => n.id === edge.targetId)?.label || 'Unknown'}</span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {edges.map((edge) => {
+                  const srcNode = nodes.find((n) => n.id === edge.sourceId);
+                  const tgtNode = nodes.find((n) => n.id === edge.targetId);
+                  return (
+                    <div
+                      key={edge.id}
+                      className="rounded-xl border border-slate-900 bg-slate-950/40 p-4 flex items-center justify-between gap-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-350 truncate">
+                          {srcNode?.label || 'Unknown'}
                         </p>
-                        <p className="text-xs text-slate-500">{relationLabels[edge.relation] || edge.relation}</p>
+                        <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider mt-0.5">
+                          &rarr; {relationLabels[edge.relation] || edge.relation} &rarr;
+                        </p>
+                        <p className="text-xs font-bold text-slate-350 truncate mt-0.5">
+                          {tgtNode?.label || 'Unknown'}
+                        </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteEdge(edge.id)}
-                        className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                      >
-                        Remove
-                      </button>
+                      {myRole !== 'VIEWER' && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEdge(edge.id)}
+                          className="rounded-lg border border-red-950/40 bg-red-950/10 px-2 py-1 text-3xs font-bold uppercase text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
-          </div>
+          </section>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Add node</h2>
-            <form onSubmit={handleCreateNode} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Label</label>
-                <input
-                  value={newNode.label}
-                  onChange={(event) => setNewNode({ ...newNode, label: event.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                  placeholder="New concept or hypothesis"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
-                <select
-                  value={newNode.type}
-                  onChange={(event) => setNewNode({ ...newNode, type: event.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                >
-                  {types.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
-                <textarea
-                  value={newNode.description}
-                  onChange={(event) => setNewNode({ ...newNode, description: event.target.value })}
-                  className="w-full min-h-24 rounded-2xl border border-slate-300 px-4 py-3"
-                  placeholder="Optional details"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-white font-semibold hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                Add node
-              </button>
-            </form>
-          </div>
+        {/* Right Side Form Controls (Owners/Editors only) */}
+        <div className="space-y-6">
+          {myRole !== 'VIEWER' ? (
+            <>
+              {/* Add Node */}
+              <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 shadow-lg">
+                <h2 className="text-lg font-bold text-white mb-4">Add Node</h2>
+                <form onSubmit={handleCreateNode} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Label / Name
+                    </label>
+                    <input
+                      required
+                      value={newNode.label}
+                      onChange={(e) => setNewNode({ ...newNode, label: e.target.value })}
+                      placeholder="e.g. Hypothesis X"
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Type
+                    </label>
+                    <select
+                      value={newNode.type}
+                      onChange={(e) => setNewNode({ ...newNode, type: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-300 focus:outline-none"
+                    >
+                      {types.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={newNode.description}
+                      onChange={(e) => setNewNode({ ...newNode, description: e.target.value })}
+                      placeholder="Optional notes or context..."
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full rounded-xl bg-indigo-600 py-3 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+                  >
+                    Add Node
+                  </button>
+                </form>
+              </section>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Add relationship</h2>
-            <form onSubmit={handleCreateEdge} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Source node</label>
-                <select
-                  value={newEdge.sourceId}
-                  onChange={(event) => setNewEdge({ ...newEdge, sourceId: event.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                >
-                  <option value="">Select source</option>
-                  {nodes.map((node) => (
-                    <option key={node.id} value={node.id}>{node.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Target node</label>
-                <select
-                  value={newEdge.targetId}
-                  onChange={(event) => setNewEdge({ ...newEdge, targetId: event.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                >
-                  <option value="">Select target</option>
-                  {nodes.map((node) => (
-                    <option key={node.id} value={node.id}>{node.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Relation</label>
-                <select
-                  value={newEdge.relation}
-                  onChange={(event) => setNewEdge({ ...newEdge, relation: event.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                >
-                  {Object.entries(relationLabels).map(([relation, label]) => (
-                    <option key={relation} value={relation}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-white font-semibold hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                Add relationship
-              </button>
-            </form>
-          </div>
+              {/* Add Edge */}
+              <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 shadow-lg">
+                <h2 className="text-lg font-bold text-white mb-4">Add Relationship</h2>
+                <form onSubmit={handleCreateEdge} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Source Node
+                    </label>
+                    <select
+                      value={newEdge.sourceId}
+                      onChange={(e) => setNewEdge({ ...newEdge, sourceId: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-300 focus:outline-none"
+                    >
+                      <option value="">Select source</option>
+                      {nodes.map((node) => (
+                        <option key={node.id} value={node.id}>
+                          {node.label} ({node.type.toLowerCase()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Target Node
+                    </label>
+                    <select
+                      value={newEdge.targetId}
+                      onChange={(e) => setNewEdge({ ...newEdge, targetId: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-300 focus:outline-none"
+                    >
+                      <option value="">Select target</option>
+                      {nodes.map((node) => (
+                        <option key={node.id} value={node.id}>
+                          {node.label} ({node.type.toLowerCase()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      Relation type
+                    </label>
+                    <select
+                      value={newEdge.relation}
+                      onChange={(e) => setNewEdge({ ...newEdge, relation: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-300 focus:outline-none"
+                    >
+                      {Object.entries(relationLabels).map(([relation, label]) => (
+                        <option key={relation} value={relation}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full rounded-xl bg-indigo-600 py-3 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+                  >
+                    Add Relationship
+                  </button>
+                </form>
+              </section>
+            </>
+          ) : (
+            <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 text-center shadow-lg">
+              <span className="text-2xl block mb-2">🔒</span>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
+                Read-Only View
+              </p>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                Your role is <strong>Viewer</strong>. You do not have permissions to modify concept nodes or relationships.
+              </p>
+            </section>
+          )}
         </div>
       </div>
     </div>
   );
-};
-
-export default ConceptsPage;
+}

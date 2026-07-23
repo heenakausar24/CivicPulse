@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import * as conceptController from '../controllers/concept.controller.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireProjectRole } from '../middleware/projectAuth.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
 
-router.get('/', conceptController.getConceptGraph);
-router.post('/nodes', conceptController.createConceptNode);
-router.put('/nodes/:nodeId', conceptController.updateConceptNode);
-router.delete('/nodes/:nodeId', conceptController.deleteConceptNode);
+router.get('/', requireProjectRole(['OWNER', 'EDITOR', 'VIEWER']), conceptController.getConceptGraph);
+router.post('/nodes', requireProjectRole(['OWNER', 'EDITOR']), conceptController.createConceptNode);
+router.put('/nodes/:nodeId', requireProjectRole(['OWNER', 'EDITOR']), conceptController.updateConceptNode);
+router.delete('/nodes/:nodeId', requireProjectRole(['OWNER', 'EDITOR']), conceptController.deleteConceptNode);
 
-router.post('/edges', conceptController.createEdge);
-router.delete('/edges/:edgeId', conceptController.deleteEdge);
+router.post('/edges', requireProjectRole(['OWNER', 'EDITOR']), conceptController.createEdge);
+router.delete('/edges/:edgeId', requireProjectRole(['OWNER', 'EDITOR']), conceptController.deleteEdge);
 
 export default router;

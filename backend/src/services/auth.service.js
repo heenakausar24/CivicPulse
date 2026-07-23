@@ -13,7 +13,7 @@ const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d';
  * Helper to generate access and refresh tokens.
  */
 const generateTokens = async (user) => {
-  const payload = { id: user.id, email: user.email, role: user.role };
+  const payload = { id: user.id, email: user.email };
   
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRY });
   const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: REFRESH_EXPIRY });
@@ -34,9 +34,9 @@ const generateTokens = async (user) => {
 };
 
 /**
- * Register a new Citizen user.
+ * Register a new user.
  */
-export const registerCitizen = async (userData) => {
+export const register = async (userData) => {
   const { name, email, password, phone } = userData;
 
   if (!name || !email || !password) {
@@ -63,14 +63,12 @@ export const registerCitizen = async (userData) => {
       email,
       password: passwordHash,
       phone,
-      role: 'CITIZEN',
     },
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
-      role: true,
       createdAt: true,
     },
   });
@@ -82,7 +80,7 @@ export const registerCitizen = async (userData) => {
 };
 
 /**
- * Login Citizen or Authority user.
+ * Login user.
  */
 export const login = async (email, password) => {
   if (!email || !password) {
@@ -113,7 +111,6 @@ export const login = async (email, password) => {
     name: user.name,
     email: user.email,
     phone: user.phone,
-    role: user.role,
     createdAt: user.createdAt,
   };
 
@@ -159,7 +156,6 @@ export const refreshTokens = async (tokenString) => {
     id: storedToken.user.id,
     name: storedToken.user.name,
     email: storedToken.user.email,
-    role: storedToken.user.role,
   };
 
   return { user: cleanUser, ...tokens };
@@ -177,3 +173,4 @@ export const logout = async (tokenString) => {
   }
   return true;
 };
+

@@ -36,7 +36,6 @@ export const requireAuth = async (req, res, next) => {
         id: true,
         email: true,
         name: true,
-        role: true,
       },
     });
 
@@ -51,25 +50,3 @@ export const requireAuth = async (req, res, next) => {
     next(error);
   }
 };
-
-/**
- * Middleware factory to authorize specific roles.
- * @param {...string} roles Allowed roles ('CITIZEN', 'AUTHORITY')
- */
-export const requireRole = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required.', 401));
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return next(new AppError('You do not have permission to perform this action.', 403));
-    }
-
-    next();
-  };
-};
-
-// Quick shortcut handlers
-export const requireCitizen = requireRole('CITIZEN');
-export const requireAuthority = requireRole('AUTHORITY');
