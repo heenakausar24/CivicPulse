@@ -57,6 +57,7 @@ model Project {
   workflow      WorkflowCard[]
   conceptNodes  ConceptNode[]
   edges         Edge[]
+  experiments   Experiment[]
   collaborators ProjectCollaborator[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -67,6 +68,36 @@ enum WorkflowStage {
   HYPOTHESIS_DEVELOPMENT
   EXPERIMENT_DESIGN
   RESULT_ANALYSIS
+}
+
+enum ExperimentStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model Experiment {
+  id          String             @id @default(uuid())
+  title       String
+  objective   String?
+  methodology String?
+  status      ExperimentStatus   @default(PLANNED)
+  projectId   String
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  iterations  ExperimentIteration[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model ExperimentIteration {
+  id           String     @id @default(uuid())
+  notes        String?
+  result       String?
+  attemptNumber Int
+  experimentId String
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
 }
 
 model WorkflowCard {

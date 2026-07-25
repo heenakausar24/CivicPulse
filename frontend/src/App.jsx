@@ -5,6 +5,9 @@ import ProjectWorkspace from "./pages/project/ProjectWorkspace";
 import LiteraturePage from "./pages/project/LiteraturePage";
 import WorkflowPage from "./pages/project/WorkflowPage";
 import ConceptsPage from "./pages/project/ConceptsPage";
+import ExperimentsPage from "./pages/project/ExperimentsPage";
+import LineagePage from "./pages/project/LineagePage";
+import VisualizePage from "./pages/project/VisualizePage";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
@@ -20,6 +23,9 @@ function App() {
         <Route path="literature" element={<LiteraturePage />} />
         <Route path="workflow" element={<WorkflowPage />} />
         <Route path="concepts" element={<ConceptsPage />} />
+        <Route path="experiments" element={<ExperimentsPage />} />
+        <Route path="visualize" element={<VisualizePage />} />
+        <Route path="lineage/:insightId" element={<LineagePage />} />
       </Route>
 
       <Route path="/login" element={<Login />} />

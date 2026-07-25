@@ -2,9 +2,12 @@ import prisma from '../config/db.js';
 import AppError from '../utils/appError.js';
 
 export const getWorkflowCards = async (userId, projectId) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { collaborators: true },
+  });
 
-  if (!project || project.ownerId !== userId) {
+  if (!project || !project.collaborators.some((c) => c.userId === userId)) {
     throw new AppError('Project not found or access denied.', 404);
   }
 
@@ -15,9 +18,12 @@ export const getWorkflowCards = async (userId, projectId) => {
 };
 
 export const createWorkflowCard = async (userId, projectId, cardData) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { collaborators: true },
+  });
 
-  if (!project || project.ownerId !== userId) {
+  if (!project || !project.collaborators.some((c) => c.userId === userId)) {
     throw new AppError('Project not found or access denied.', 404);
   }
 

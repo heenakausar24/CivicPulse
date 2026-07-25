@@ -73,6 +73,17 @@ export const getProjectById = async (userId, projectId) => {
           },
         },
       },
+      workflow: {
+        orderBy: { updatedAt: 'desc' },
+      },
+      experiments: {
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          iterations: {
+            orderBy: { attemptNumber: 'asc' },
+          },
+        },
+      },
     },
   });
 

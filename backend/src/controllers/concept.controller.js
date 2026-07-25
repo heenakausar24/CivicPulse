@@ -54,3 +54,12 @@ export const deleteEdge = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getLineageGraph = async (req, res, next) => {
+  try {
+    const data = await conceptService.getLineageData(req.user.id, req.params.projectId, req.params.nodeId);
+    return sendSuccess(res, 'Insight lineage loaded successfully.', data, 200);
+  } catch (error) {
+    next(error);
+  }
+};

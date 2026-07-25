@@ -56,6 +56,39 @@ export default function ConceptsPage() {
     }, {});
   }, [nodes]);
 
+  const getEdgeCoordinates = (source, target) => {
+    const width = 224;
+    const height = 120;
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDx === 0 && absDy === 0) {
+      return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+    }
+
+    if (absDx > absDy) {
+      const sign = Math.sign(dx) || 1;
+      const yOffset = absDx === 0 ? 0 : Math.min((height / 2) * (absDy / absDx), height / 2);
+      return {
+        x1: source.x + sign * width / 2,
+        y1: source.y + yOffset * Math.sign(dy),
+        x2: target.x - sign * width / 2,
+        y2: target.y - yOffset * Math.sign(dy),
+      };
+    }
+
+    const sign = Math.sign(dy) || 1;
+    const xOffset = absDy === 0 ? width / 2 : Math.min((width / 2) * (absDx / absDy), width / 2);
+    return {
+      x1: source.x + xOffset * Math.sign(dx),
+      y1: source.y + sign * height / 2,
+      x2: target.x - xOffset * Math.sign(dx),
+      y2: target.y - sign * height / 2,
+    };
+  };
+
   const handleCreateNode = async (event) => {
     event.preventDefault();
     if (myRole === 'VIEWER') return;
@@ -143,21 +176,22 @@ export default function ConceptsPage() {
               {/* SVG drawing layer for relationship lines */}
               <svg className="absolute inset-0 h-full w-full pointer-events-none" style={{ minHeight: '520px', minWidth: '700px' }}>
                 <defs>
-                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="10" refY="4" orient="auto-start-reverse">
-                    <path d="M0,0 L8,4 L0,8" fill="#4f46e5" />
+                  <marker id="arrow" markerWidth="7" markerHeight="6" refX="7" refY="3" orient="auto">
+                    <path d="M0,0 L7,3 L0,6" fill="#4f46e5" />
                   </marker>
                 </defs>
                 {edges.map((edge) => {
                   const source = nodePositions[edge.sourceId];
                   const target = nodePositions[edge.targetId];
                   if (!source || !target) return null;
+                  const { x1, y1, x2, y2 } = getEdgeCoordinates(source, target);
                   return (
                     <g key={edge.id}>
                       <line
-                        x1={source.x}
-                        y1={source.y}
-                        x2={target.x}
-                        y2={target.y}
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
                         stroke="#312e81"
                         strokeWidth="2"
                         markerEnd="url(#arrow)"
@@ -212,6 +246,17 @@ export default function ConceptsPage() {
                       >
                         {node.type}
                       </span>
+                      <div className="flex items-center gap-2">
+                      {node.type === 'INSIGHT' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/projects/${projectId}/lineage/${node.id}`)}
+                          className="rounded-full bg-indigo-950 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-300 hover:bg-indigo-900"
+                          title="View lineage"
+                        >
+                          View Lineage
+                        </button>
+                      )}
                       {myRole !== 'VIEWER' && (
                         <button
                           type="button"
@@ -222,6 +267,7 @@ export default function ConceptsPage() {
                           ✕
                         </button>
                       )}
+                    </div>
                     </div>
                     <h3 className="text-xs font-bold text-slate-100 line-clamp-1">{node.label}</h3>
                     <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">

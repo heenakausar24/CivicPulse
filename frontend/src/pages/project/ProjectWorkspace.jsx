@@ -220,6 +220,12 @@ export default function ProjectWorkspace() {
         <Link to={`/projects/${projectId}/concepts`} className={tabClass('concepts')}>
           Concepts
         </Link>
+        <Link to={`/projects/${projectId}/experiments`} className={tabClass('experiments')}>
+          Experiments
+        </Link>
+        <Link to={`/projects/${projectId}/visualize`} className={tabClass('visualize')}>
+          Visualize
+        </Link>
       </div>
 
       {/* Tab Panel */}
