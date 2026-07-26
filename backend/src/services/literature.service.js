@@ -1,6 +1,19 @@
 import prisma from '../config/db.js';
 import AppError from '../utils/appError.js';
 
+const ensureProjectAccess = async (userId, projectId) => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { collaborators: true },
+  });
+
+  if (!project || !project.collaborators.some((c) => c.userId === userId)) {
+    throw new AppError('Project not found or access denied.', 404);
+  }
+
+  return project;
+};
+
 export const createReference = async (userId, projectId, payload, fileMeta) => {
   const { title, authors, year, tags, summary } = payload;
 
@@ -8,13 +21,7 @@ export const createReference = async (userId, projectId, payload, fileMeta) => {
     throw new AppError('Project ID and title are required.', 400);
   }
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project || project.ownerId !== userId) {
-    throw new AppError('Project not found or access denied.', 404);
-  }
+  await ensureProjectAccess(userId, projectId);
 
   const reference = await prisma.reference.create({
     data: {
@@ -35,16 +42,11 @@ export const createReference = async (userId, projectId, payload, fileMeta) => {
 };
 
 export const getReferences = async (userId, projectId) => {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-  });
-
-  if (!project || project.ownerId !== userId) {
-    throw new AppError('Project not found or access denied.', 404);
-  }
+  await ensureProjectAccess(userId, projectId);
 
   return prisma.reference.findMany({
     where: { projectId },
     orderBy: { createdAt: 'desc' },
   });
 };
+

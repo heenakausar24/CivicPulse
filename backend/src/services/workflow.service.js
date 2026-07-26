@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import AppError from '../utils/appError.js';
 
-export const getWorkflowCards = async (userId, projectId) => {
+const ensureProjectAccess = async (userId, projectId) => {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: { collaborators: true },
@@ -10,6 +10,12 @@ export const getWorkflowCards = async (userId, projectId) => {
   if (!project || !project.collaborators.some((c) => c.userId === userId)) {
     throw new AppError('Project not found or access denied.', 404);
   }
+
+  return project;
+};
+
+export const getWorkflowCards = async (userId, projectId) => {
+  await ensureProjectAccess(userId, projectId);
 
   return prisma.workflowCard.findMany({
     where: { projectId },
@@ -18,14 +24,7 @@ export const getWorkflowCards = async (userId, projectId) => {
 };
 
 export const createWorkflowCard = async (userId, projectId, cardData) => {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: { collaborators: true },
-  });
-
-  if (!project || !project.collaborators.some((c) => c.userId === userId)) {
-    throw new AppError('Project not found or access denied.', 404);
-  }
+  await ensureProjectAccess(userId, projectId);
 
   const { title, description, stage } = cardData;
   if (!title) {
@@ -43,11 +42,7 @@ export const createWorkflowCard = async (userId, projectId, cardData) => {
 };
 
 export const updateWorkflowCard = async (userId, projectId, cardId, cardData) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
-
-  if (!project || project.ownerId !== userId) {
-    throw new AppError('Project not found or access denied.', 404);
-  }
+  await ensureProjectAccess(userId, projectId);
 
   const card = await prisma.workflowCard.findUnique({ where: { id: cardId } });
   if (!card || card.projectId !== projectId) {
@@ -65,11 +60,7 @@ export const updateWorkflowCard = async (userId, projectId, cardId, cardData) =>
 };
 
 export const deleteWorkflowCard = async (userId, projectId, cardId) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
-
-  if (!project || project.ownerId !== userId) {
-    throw new AppError('Project not found or access denied.', 404);
-  }
+  await ensureProjectAccess(userId, projectId);
 
   const card = await prisma.workflowCard.findUnique({ where: { id: cardId } });
   if (!card || card.projectId !== projectId) {
@@ -79,3 +70,4 @@ export const deleteWorkflowCard = async (userId, projectId, cardId) => {
   await prisma.workflowCard.delete({ where: { id: cardId } });
   return true;
 };
+
